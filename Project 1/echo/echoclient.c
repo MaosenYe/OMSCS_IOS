@@ -1,4 +1,6 @@
 /* client.c */
+/* A simple client using TCP
+   The server port and message are passed as an argument */
 /* 0  Copyright (c) 2020 もぃ. All rights reserved. */
 /* 1 includes */
 #include <stdio.h>
@@ -22,7 +24,7 @@
     "  -p                  Port (Default: 20502)\n"                                  \
     "  -m                  Message to send to server (Default: \"Hello world.\")\n" \
     "  -h                  Show this help message\n"
-#define OPTSTR "vi:o:f:h"
+#define OPTSTR "s:p:m:hx"
 #define USAGE_FMT  "%s [-s Server] [-p Port] [-m Message] [-h]\n"
 #define ERR_SEND_SOCKET "send sockets"
 #define DEFAULT_PROGNAME "moli"
@@ -48,22 +50,21 @@ int  send_sockets(options_t *options);
 /* 7 main function  */
 int main(int argc, char *argv[]) {
     int opt;
-    options_t *options;
-
+    options_t  options={"localhost",20502,"Hello World"};
     opterr = 0;
 
     while ((opt = getopt(argc, argv, OPTSTR)) != EOF)
        switch(opt) {
            case 's':
-                options->hostname=optarg;
+                options.hostname=optarg;
                 break;
 
            case 'p':
-                options->portno=atoi(optarg);
+                options.portno=atoi(optarg);
                 break;
 
            case 'm':
-                options->message=optarg;
+                options.message=optarg;
                 break;               
 
            case 'h':
@@ -100,7 +101,7 @@ int send_sockets(options_t *options) {
      return EXIT_FAILURE;
    }
 
-   if (options->hostname==NULL||options->portno==NULL) {
+   if ((options->hostname==NULL)||(options->portno < 1025) || (options->portno > 65535)) {
      errno = EDESTADDRREQ;
      return EXIT_FAILURE;
    }
