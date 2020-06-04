@@ -1,6 +1,6 @@
 CC     = gcc
 ASAN_FLAGS = -fsanitize=address -fno-omit-frame-pointer -Wno-format-security
-ASAN_LIBS = -static-libasan
+ASAN_LIBS = -static-libsan
 CFLAGS := -Wall -Werror --std=gnu99 -g3
 
 
