@@ -2,7 +2,7 @@
 #include "gfclient.h"
 #include "workload.h"
 
-#define BUFSIZE 520
+
 #define PATH_BUFFER_SIZE 2080
 
 #define USAGE                                                                 \
@@ -24,7 +24,7 @@ static struct option gLongOptions[] = {
   {"help",          no_argument,            NULL,           'h'},
   {NULL,            0,                      NULL,             0}
 };
-
+extern int errno;
 static void Usage() {
 	fprintf(stdout, "%s", USAGE);
 }

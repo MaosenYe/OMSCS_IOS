@@ -12,46 +12,46 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#define BUFSIZE 4096
+
+
 struct gfcrequest_t{
     char    *server;
     char    *req_path;
     unsigned short  port;
-    void *writefunc;
-    void *headerfunc;
-    void *writearg;
-    void *headerarg;
+    void  (*writefunc)(void *data_buffer, size_t data_buffer_length, void *handlerarg);
+    void  (*headererfunc)(void *headerer_buffer, size_t headerer_buffer_length, void *handlerarg);
+    char *writearg;
+    char *headererarg;
     size_t  bytesreceived;
     size_t  filelen;
     gfstatus_t status;
     FILE    *file;
-}
+};
 // optional function for cleaup processing.
-void gfc_cleanup(gfcrequest_t **gfr){
-    bzero(*gfr,sizeof(*gfr));
+void gfc_cleanup(gfcrequest_t **gfc){
+    bzero(*gfc,sizeof(*gfc));
 }
 
 gfcrequest_t *gfc_create(){
     // dummy for now - need to fill this part in
-    gfcrequest_t **gfr;
-    (*gfr)->path="workload.txt";
-    (*gfr)->port="20502"
-    (*gfr)->server="127.0.0.1";
-    return *gfr;
+    gfcrequest_t *gfc=(gfcrequest_t*)malloc(sizeof(gfcrequest_t));
+    return gfc;
 }
 
-size_t gfc_get_bytesreceived(gfcrequest_t **gfr){
+size_t gfc_get_bytesreceived(gfcrequest_t **gfc){
     // not yet implemented
-    return (*gfr)->bytesreceived;
+    return (*gfc)->bytesreceived;
 }
 
-size_t gfc_get_filelen(gfcrequest_t **gfr){
+size_t gfc_get_filelen(gfcrequest_t **gfc){
     // not yet implemented
-    return (*gfr)->filelen;
+    return (*gfc)->filelen;
 }
 
-gfstatus_t gfc_get_status(gfcrequest_t **gfr){
+gfstatus_t gfc_get_status(gfcrequest_t **gfc){
     // not yet implemented
-    return (*gfr)->status;
+    return (*gfc)->status;
 }
 
 void gfc_global_init(){
@@ -60,7 +60,7 @@ void gfc_global_init(){
 void gfc_global_cleanup(){
 }
 
-int gfc_perform(gfcrequest_t **gfr){
+int gfc_perform(gfcrequest_t **gfc){
     //Socket connect
     int sockfd;
     struct sockaddr_in serv_addr;
@@ -71,7 +71,7 @@ int gfc_perform(gfcrequest_t **gfr){
      errno=ESOCKTNOSUPPORT;
      return EXIT_FAILURE;
     }
-    server = gethostbyname((*gfr)->server);
+    server = gethostbyname((*gfc)->server);
     if (server == NULL) {
      errno=EHOSTUNREACH;
      return EXIT_FAILURE;
@@ -81,57 +81,77 @@ int gfc_perform(gfcrequest_t **gfr){
     bcopy((char *)server->h_addr, 
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
-    serv_addr.sin_port = htons((*gfr)->port);
+    serv_addr.sin_port = htons((*gfc)->port);
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
      errno=ENOTCONN;
      return EXIT_FAILURE;        
     }
-    bzero(buffer,BUFSIZE);
-    strcpy((char*) buffer ,(*gfr)->headerarg);
-    int n = write(sockfd,buffer,strlen(buffer));
+    // bzero(buffer,BUFSIZE);
+    char* header=request_head((*gfc)->req_path);
+    // strcpy((char*) buffer,header);
+    int n = write(sockfd,header,strlen(header));
     if (n < 0){
      errno=EBADMSG;
      return EXIT_FAILURE;
     } 
     bzero(buffer,BUFSIZE);
+    free(header);
     n = read(sockfd,buffer,BUFSIZE);
     if (n < 0){
      errno=EBADMSG;
      return EXIT_FAILURE;
     } 
-    printf("%s\n",buffer);
-    close(sockfd);
-    return EXIT_SUCCESS;
+    
+    // printf("%s\n",buffer);
+    // close(sockfd);
+    // return EXIT_SUCCESS;
 
-    return -1;
 }
 
-void gfc_set_headerarg(gfcrequest_t **gfr, void *headerarg){
-    (*gfr)->headerarg=headerarg;
+void gfc_set_headererarg(gfcrequest_t **gfc, void *headererarg){
+    (*gfc)->headererarg=headererarg;
 }
 
-void gfc_set_headerfunc(gfcrequest_t **gfr, void (*headerfunc)(void*, size_t, void *)){
-    (*gfr)->headerfunc=headerfunc;
+void gfc_set_headererfunc(gfcrequest_t **gfc, void (*headererfunc)(void*, size_t, void *)){
+    (*gfc)->headererfunc=headererfunc;
 }
 
-void gfc_set_path(gfcrequest_t **gfr, const char* path){
-    (*gfr)->req_path=path;
+void gfc_set_path(gfcrequest_t **gfc, const char* path){
+    // bzero((*gfc)->headererarg,sizeof((*gfc)->headererarg));
+    // char* result=strcat(scheme,method); 
+    // char* result=strcat(result,path);
+    // (*gfc)->req_path=result;
+    (*gfc)->req_path = calloc(strlen(path) + 1, sizeof(char));
+    if (NULL == path || NULL == (*gfc)->req_path) {
+        fprintf(stderr, "%s @ %d: failed to set server\n", __FILE__, __LINE__);
+        exit(EXIT_FAILURE);
+    }
+    strncpy((*gfc)->req_path, path, strlen(path));
+    printf("SET SERVER TO: %s\n", (*gfc)->req_path);
 }
 
-void gfc_set_port(gfcrequest_t **gfr, unsigned short port){
-    (*gfr)->port=port;
+void gfc_set_port(gfcrequest_t **gfc, unsigned short port){
+    (*gfc)->port=port;
+    printf("SET SERVER TO: %s\n", (*gfc)->server);
 }
 
-void gfc_set_server(gfcrequest_t **gfr, const char* server){
-    (*gfr)->server=server;
+void gfc_set_server(gfcrequest_t **gfc, const char* server){
+    // (*gfc)->server=server;
+    (*gfc)->server = calloc(strlen(server) + 1, sizeof(char));
+    if (NULL == server || NULL == (*gfc)->server) {
+        fprintf(stderr, "%s @ %d: failed to set server\n", __FILE__, __LINE__);
+        exit(EXIT_FAILURE);
+    }
+    strncpy((*gfc)->server, server, strlen(server));
+    printf("SET SERVER TO: %s\n", (*gfc)->server);
 }
 
-void gfc_set_writearg(gfcrequest_t **gfr, void *writearg){
-    (*gfr)->writearg=writearg;
+void gfc_set_writearg(gfcrequest_t **gfc, void *writearg){
+    (*gfc)->writearg=writearg;
 }
 
-void gfc_set_writefunc(gfcrequest_t **gfr, void (*writefunc)(void*, size_t, void *)){
-    (*gfr)->writefunc=writefunc;
+void gfc_set_writefunc(gfcrequest_t **gfc, void (*writefunc)(void*, size_t, void *)){
+    (*gfc)->writefunc=writefunc;
 }
 
 const char* gfc_strstatus(gfstatus_t status){

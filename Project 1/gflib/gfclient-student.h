@@ -6,5 +6,29 @@
  
  #include "gfclient.h"
  #include "gf-student.h"
- 
+ #define scheme "GETFILE"
+ #define method " GET "
+ #define marker "\r\n\r\n"
+
+ /* Callbacks ========================================================= */
+  char* request_head(char* path){
+  size_t total_len = strlen("GETFILE GET ") + strlen(path) + strlen(marker) + 1;
+  char *message = malloc(total_len * sizeof(char));
+  fprintf(stdout, "SENDING REQUEST\nGETFILE GET %s%s",path, marker);
+  snprintf(message, total_len, "GETFILE GET %s%s",path, marker);
+  return message;
+}
+/* Callbacks ========================================================= */
+static void writecb(void* data, size_t data_len, void *arg){
+  FILE *file = (FILE*) arg;
+
+  fwrite(data, 1, data_len, file);
+}
+/* Callbacks ========================================================= */
+ void writecb(void* data, size_t data_len, void *arg){
+  FILE *file = (FILE*) arg;
+
+  fwrite(data, 1, data_len, file);
+}
+
  #endif // __GF_CLIENT_STUDENT_H__
