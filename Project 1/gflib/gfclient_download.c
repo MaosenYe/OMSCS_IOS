@@ -137,6 +137,7 @@ int main(int argc, char **argv) {
     gfc_set_server(&gfr, server);
     gfc_set_path(&gfr, req_path);
     gfc_set_port(&gfr, port);
+    gfc_set_headerfunc(&gfr,request_head);
     gfc_set_writefunc(&gfr, writecb);
     gfc_set_writearg(&gfr, file);
 
