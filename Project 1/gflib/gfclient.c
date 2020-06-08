@@ -30,7 +30,10 @@ struct gfcrequest_t{
 };
 // optional function for cleaup processing.
 void gfc_cleanup(gfcrequest_t **gfc){
-    bzero(*gfc,sizeof(*gfc));
+
+    free((*gfc)->req_path);
+    free((*gfc)->server);
+    free(*gfc);
 }
 
 gfcrequest_t *gfc_create(){
@@ -66,6 +69,7 @@ int gfc_perform(gfcrequest_t **gfc){
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char buffer[BUFSIZE];
+    int total_byte=0;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0){
      errno=ESOCKTNOSUPPORT;
@@ -87,9 +91,9 @@ int gfc_perform(gfcrequest_t **gfc){
      return EXIT_FAILURE;        
     }
     // bzero(buffer,BUFSIZE);
-    char* header=request_head((*gfc)->req_path);
+    // (*gfc)->headererarg=(char*)(*gfc)->headererfunc((*gfc)->req_path);
     // strcpy((char*) buffer,header);
-    int n = write(sockfd,header,strlen(header));
+    int n = write(sockfd,(*gfc)->headererarg,strlen((*gfc)->headererarg));
     if (n < 0){
      errno=EBADMSG;
      return EXIT_FAILURE;
@@ -99,9 +103,58 @@ int gfc_perform(gfcrequest_t **gfc){
     n = read(sockfd,buffer,BUFSIZE);
     if (n < 0){
      errno=EBADMSG;
+     (*gfc)->status=GF_INVALID;
      return EXIT_FAILURE;
     } 
+    total_byte+=n;
+    char* ptr=strstr(marker,buffer);
+    if (ptr==NULL)
+    {
+        (*gfc)->status=GF_INVALID;
+        (*gfc)->filelen=0;
+        (*gfc)->bytesreceived=total_byte;
+        return EXIT_FAILURE;
+    }
     
+    int response_len=ptr-buffer+strlen(marker);
+    (*gfc)->headererarg = malloc((response_len+1)* sizeof(char));
+    strncpy((*gfc)->headererarg,buffer,response_len);
+    //analyze the response
+    sscanf();
+    //different status operations
+    switch ((*gfc)->status)
+    {
+
+    case GF_INVALID: {
+        return EXIT_FAILURE;
+    }
+    break;
+
+    case GF_FILE_NOT_FOUND: {
+        return EXIT_FAILURE;
+    }
+    break;
+
+    case GF_ERROR: {
+        return EXIT_FAILURE;
+    }
+    break;
+
+    case GF_OK: {
+        (*gfc)->writefunc(ptr,BUFSIZE-response_len,(*gfc)->writearg);
+        while (n)
+        {
+            bzero(buffer,BUFSIZE);
+
+            (*gfc)->writefunc(buffer,BUFSIZE,(*gfc)->writearg);
+        }
+        return EXIT_SUCCESS;
+    }
+    break;
+    
+    default:
+        return EXIT_FAILURE;
+    }
     // printf("%s\n",buffer);
     // close(sockfd);
     // return EXIT_SUCCESS;
