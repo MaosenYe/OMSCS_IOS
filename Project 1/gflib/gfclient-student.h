@@ -18,17 +18,6 @@
   snprintf(message, total_len, "GETFILE GET %s%s",path, marker);
   return message;
 }
-/* Callbacks ========================================================= */
-static void writecb(void* data, size_t data_len, void *arg){
-  FILE *file = (FILE*) arg;
 
-  fwrite(data, 1, data_len, file);
-}
-/* Callbacks ========================================================= */
- void writecb(void* data, size_t data_len, void *arg){
-  FILE *file = (FILE*) arg;
-
-  fwrite(data, 1, data_len, file);
-}
 
  #endif // __GF_CLIENT_STUDENT_H__
