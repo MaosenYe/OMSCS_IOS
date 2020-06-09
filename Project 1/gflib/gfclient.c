@@ -120,7 +120,7 @@ int gfc_perform(gfcrequest_t **gfc){
     (*gfc)->headererarg = malloc((response_len+1)* sizeof(char));
     strncpy((*gfc)->headererarg,buffer,response_len);
     //analyze the response
-    sscanf();
+    // sscanf();
     //different status operations
     switch ((*gfc)->status)
     {
