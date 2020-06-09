@@ -20,7 +20,7 @@ struct gfcrequest_t{
     char    *req_path;
     unsigned short  port;
     void  (*writefunc)(void *data_buffer, size_t data_buffer_length, void *handlerarg);
-    void  (*headererfunc)(void *headerer_buffer, size_t headerer_buffer_length, void *handlerarg);
+    char*  (*headererfunc)(void *headerer_buffer, size_t headerer_buffer_length, void *handlerarg);
     char *writearg;
     char *headererarg;
     size_t  bytesreceived;
@@ -90,9 +90,9 @@ int gfc_perform(gfcrequest_t **gfc){
      errno=ENOTCONN;
      return EXIT_FAILURE;        
     }
-    // bzero(buffer,BUFSIZE);
-    // (*gfc)->headererarg=(char*)(*gfc)->headererfunc((*gfc)->req_path);
-    // strcpy((char*) buffer,header);
+    bzero(buffer,BUFSIZE);
+    char *header=request_head((*gfc)->req_path);
+    strcpy((char*) buffer,header);
     int n = write(sockfd,(*gfc)->headererarg,strlen((*gfc)->headererarg));
     if (n < 0){
      errno=EBADMSG;
@@ -119,9 +119,7 @@ int gfc_perform(gfcrequest_t **gfc){
     int response_len=ptr-buffer+strlen(marker);
     (*gfc)->headererarg = malloc((response_len+1)* sizeof(char));
     strncpy((*gfc)->headererarg,buffer,response_len);
-    //analyze the response
-    // sscanf();
-    //different status operations
+    
     switch ((*gfc)->status)
     {
 
@@ -155,9 +153,6 @@ int gfc_perform(gfcrequest_t **gfc){
     default:
         return EXIT_FAILURE;
     }
-    // printf("%s\n",buffer);
-    // close(sockfd);
-    // return EXIT_SUCCESS;
 
 }
 
@@ -170,10 +165,6 @@ void gfc_set_headererfunc(gfcrequest_t **gfc, void (*headererfunc)(void*, size_t
 }
 
 void gfc_set_path(gfcrequest_t **gfc, const char* path){
-    // bzero((*gfc)->headererarg,sizeof((*gfc)->headererarg));
-    // char* result=strcat(scheme,method); 
-    // char* result=strcat(result,path);
-    // (*gfc)->req_path=result;
     (*gfc)->req_path = calloc(strlen(path) + 1, sizeof(char));
     if (NULL == path || NULL == (*gfc)->req_path) {
         fprintf(stderr, "%s @ %d: failed to set server\n", __FILE__, __LINE__);
