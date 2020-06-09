@@ -19,5 +19,16 @@
   return message;
 }
 
-
+void parse_header(char *path_buffer, gfcontext_t *ctx) {
+    ctx->path=calloc(PATH_BUFFER_SIZE, sizeof(char));
+    char path[PATH_BUFFER_SIZE];
+    int num_parts = sscanf(path_buffer, "GETFILE GET %s\r\n\r\n", path);
+    if (num_parts == EOF) {
+        printf("MALFORMED HEADER\n");
+        ctx->status = GF_INVALID;
+        return;
+    }
+    strncpy(ctx->path,path,PATH_BUFFER_SIZE);
+    ctx->status = GF_OK;
+}
  #endif // __GF_CLIENT_STUDENT_H__
